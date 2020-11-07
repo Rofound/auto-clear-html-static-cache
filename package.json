@@ -1,0 +1,16 @@
+{
+  "name": "auto-clear-html-static-cache",
+  "version": "1.0.0",
+  "description": "",
+  "main": "clear-cache-service.js",
+  "scripts": {
+    "start": "node clear-cache-service.js home.html",
+    "start:version": "node clear-cache-service.js home.html",
+    "test": "node clear-cache-service.js test.html",
+    "test:error": "node clear-cache-service.js",
+    "test:error1": "node clear-cache-service.js notFound.html"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

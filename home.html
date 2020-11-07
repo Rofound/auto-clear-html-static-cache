@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- ie以最高模式进行渲染 -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,
+                                     initial-scale=1.0,
+                                     maximum-scale=1.0,
+                                     user-scalable=no">
+    <title>点将系统</title>
+    <!-- 标签栏上的图标 -->
+    <link rel="shortcut icon" href="static/assets/favicon.ico">
+    <!-- 引入组件库element-ui的样式 -->
+    <link rel="stylesheet" href="static/element-ui/lib/theme-chalk/index.css?_t=1600063638030">
+    <!-- 引入字体图标样式 -->
+    <link rel="stylesheet" href="static/font-awesome/css/font-awesome.min.css?_t=1600063638030">
+    <!-- 引入弹窗样式 -->
+    <link rel="stylesheet" href="resources/plugins/bootstrap/layer/mobile/need/layer.css?_t=1600063638030">
+    <link rel="stylesheet" href="static/toast/css/iziToast.css?_t=1600063638030">
+    <!-- 引入顶部加载条样式 -->
+    <link rel="stylesheet" href="static/nprogress/nprogress.css?_t=1600063638030">
+    <!-- 引入本地css样式 -->
+    <link rel="stylesheet" href="static/css/home.min.css?_t=1600063638030">
+    <link rel="stylesheet" href="static/css/home_head.css?_t=1600063638030">
+    <!--引用外部icon图标 -->
+    <link rel="stylesheet" href="static/assets/icon/iconfont.css?_t=1600063638030">
+    <!-- 优先加载vue文件和element-ui库文件 -->
+    <script type="text/javascript" src="static/vue/dist/vue.min.js?_t=1600063638030"></script>
+    <!-- 引入组件库 -->
+    <script type="text/javascript" src="static/element-ui/lib/index.js?_t=1600063638030"></script>
+
+    <style>
+        /* 全局通用变量,用来防止渲染的时候显示vue的变量,直到有数据展示才显示 */
+        [v-cloak] {
+            display: none;
+        }
+        .is-top {
+            height: 40px !important;
+        }
+        .el-tabs__item {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="home">
+        <!-- 侧边栏 -->
+        <aside :class="isCollapse ? 'aside-collapsed' : 'aside-expanded'" ref="aside" style="height:100vh">
+            <!-- logo -->
+            <a href="home.html" id="logoId" class="logo" :class="isCollapse ? 'logo-collapsed' : 'logo-expanded'">
+                <img src="static/assets/logo.png" width="180" height="45" :width="isCollapse ? '50' : '180'"
+                    :height="isCollapse ? '42' : '45'" alt="点将在手，世界我有" title="点将在手，世界我有">
+            </a>
+            <!--导航菜单-->
+            <el-row class="menu-expanded" v-for="(item, index) in mainMenuData" :key="item.moduleName"
+                :style="{'height':win_size.contentHeight}" v-if="!isCollapse && item.moduleId == menuActive">
+                <el-col :span="24">
+                    <el-menu v-if="!isCollapse" theme="dark" :default-active="defaultActive" unique-opened> <template
+                            v-for="(citem,cindex) in item.firstMenu" :key="citem.id">
+                            <el-submenu :index="citem.id"> <template slot="title">
+                                    <i :class='"fa fa-"+citem.iCon'></i>
+                                    <el-badge is-dot :hidden="citem.isNewMenu == 0" class="item"> <span
+                                            v-cloak>{{citem.menuName}}</span> </el-badge>
+                                </template>
+                                <el-menu-item style="padding-left:30px" v-for="(ccitem,ccindex) in citem.secondMenuList"
+                                    :key="ccitem.id" :title="ccitem.menuName" @click="addTab(ccitem,citem)"
+                                    :index="ccitem.id">
+                                    <el-badge :value="ccitem.isMsg == '0' ? '' : ccitem.isMsg"
+                                        :hidden="ccitem.clickCount >= 5 || ccitem.clickCount == null" class="item">
+                                        <el-badge :value="ccitem.isMsg" :hidden="messageTip == 0" class="item">
+                                            {{ccitem.menuName}} </el-badge>
+                                    </el-badge>
+                                </el-menu-item>
+                            </el-submenu>
+                        </template> </el-menu>
+                </el-col>
+            </el-row>
+            <!--导航菜单-折叠后-->
+            <div :style="{'height':win_size.contentHeight}" v-for="(item, index) in mainMenuData" :key="item.moduleName"
+                v-if="isCollapse && item.moduleId == menuActive">
+                <ul class="el-menu menu-collapsed" :default-active="defaultActive">
+                    <li v-for="(citem,cindex) in item.firstMenu" :key="citem.id" class="el-submenu item"><template>
+                            <div class="el-submenu__title" style="padding-left: 20px; color: #BFCBD9"
+                                @mouseover="showMenuList(cindex,true)" @mouseout="showMenuList(cindex,false)">
+                                <el-badge is-dot :hidden="citem.clickCount == 0" class="item">
+                                    <i :class='"fa fa-"+citem.iCon'></i> </el-badge>
+                            </div>
+                            <ul class="el-menu submenu" :class="'submenu-hook-'+cindex"
+                                style="max-height: 400px;overflow-y: scroll;" @mouseover="showMenuList(cindex,true)"
+                                @mouseout="showMenuList(cindex,false)">
+                                <li v-for="(ccitem,ccindex) in citem.secondMenuList" class="el-menu-item"
+                                    :index="ccitem.id" @click="addTab(ccitem,citem)">
+                                    <el-badge :value="ccitem.isMsg"
+                                        :hidden="ccitem.clickCount >= 5 || ccitem.clickCount == null" class="item">
+                                        {{ccitem.menuName}} </el-badge>
+                                </li>
+                            </ul>
+                        </template></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 右边主体部分 -->
+        <section class="section-expanded-margin" ref="section"
+            :class="isCollapse?'section-collapse-margin':'section-expanded-margin'">
+            <header class="head-nav">
+                <div class="tool collapse" title="点击可折叠菜单栏" @click="collapse" ref="toolHead">
+                    <i class="fa fa-align-justify " :class="isCollapse?'icon-collapsed':'icon-expanded'"></i>
+                </div>
+                <el-menu theme="dark" :default-active="menuActive" menu-trigger="hover" class="menu-header"
+                    mode="horizontal" @select="handleSelect" unique-opened ref="moduleMenu" active-text-color="#20a0ff">
+                    <template v-cloak v-for="(item,index) in mainModuleData">
+                        <el-menu-item :index="item.parent.moduleId" :data-index="index" v-if="item.child.length === 0">
+                            {{item.parent.moduleName}}
+                        </el-menu-item>
+                        <el-submenu v-if="item.child.length > 0" :index="item.parent.moduleId" :data-index="index"
+                            class="top_menu" popper-class="popover_menu">
+                            <template slot="title">{{item.parent.moduleName}}</template>
+                            <el-menu-item v-cloak :index="citem.moduleId" v-for="citem in item.child">
+                                {{citem.moduleName}}
+                            </el-menu-item>
+                        </el-submenu>
+                    </template>
+                </el-menu>
+                <el-dropdown v-cloak v-if="more_menu_show" :hide-on-click="false">
+                    <i class="el-icon-more expend_more"></i>
+                    <el-dropdown-menu class="more_menu" slot="dropdown" v-cloak>
+                        <template v-cloak v-for="item in more_menu_data">
+                            <el-dropdown-item v-cloak @click.native="clickModuleMenu(item)">
+                                {{item.moduleName}}
+                            </el-dropdown-item>
+                        </template>
+                    </el-dropdown-menu>
+                </el-dropdown>
+                <div class="userinfo" ref="lastHead">
+                    <el-dropdown :hide-on-click="false" trigger="click">
+                        <div class="message el-dropdown-link">
+                            <el-badge :value="messageSize" :hidden="messageSize==0" class="item"><i
+                                    class="icon-lingdang" style="color:white"></i></el-badge>
+                            <el-dropdown-menu slot="dropdown" class="notice-style" v-cloak>
+                                <div style="margin-top:0px">
+                                    <el-dropdown-item style="border-bottom:1px solid #dabc8f; line-height:20px">
+                                        <i class="el-icon-star-on"></i>&nbsp;<span>{{messageSize}} 条新消息</span>
+                                    </el-dropdown-item>
+                                </div>
+                                <div class="notice-messageData">
+                                    <el-dropdown-item v-for="(item, index) in messageData"
+                                        style="border-bottom:1px solid #dabc8f; " class="sss">
+                                        <span @click="showMessage(item)"
+                                            style=" font-size: 12px; ">{{item.msRemark}}</span><span
+                                            style="float:right; font-size: 8px; -webkit-transform: scale(0.75);">{{item.msTime}}</span>
+                                    </el-dropdown-item>
+                                </div>
+                                <el-dropdown-item style="border-top:1px solid #dabc8f;line-height:20px">
+                                    <a href="#" @click="ignoreMessage()" style="float:left">忽略消息</a><a href="#"
+                                        @click="lookMessageAll()" style="float:right">消息记录</a>
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                        </div>
+                    </el-dropdown>
+                    <el-dropdown trigger="click" menu-align="end">
+                        <div title="用户信息" class="el-dropdown-link userinfo-inner">
+                            <img src="static/assets/user/user.jpg" />
+                        </div>
+                        <el-dropdown-menu slot="dropdown" v-cloak>
+                            <el-dropdown-item @click.native="dialogFormVisible = true">修改信息</el-dropdown-item>
+                            <el-dropdown-item @click.native="dialogPasswordFormVisible = true">修改密码</el-dropdown-item>
+                            <el-dropdown-item @click.native="dialogFormModel = true">默认模块</el-dropdown-item>
+                            <el-dropdown-item @click.native="dialogAboutMe = true">关于我们</el-dropdown-item>
+                            <el-dropdown-item divided @click.native="logout">退出登录</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </el-dropdown>
+                    <span class="userName" v-cloak>{{form.name}}</span>
+                </div>
+                <el-dialog title="关于我们" :visible.sync="dialogAboutMe">
+                    <h2 v-cloak>FinKnight</h2>
+                    <br>
+                    <p v-cloak>点将,点亮希望!</p>
+                    <br>
+                    <div v-cloak><img style="display:inline" alt="关注我们" width="200" height="108"
+                            src="./resources/plugins/static/main/QRcode.jpg"></div>
+                    <br>
+                    <p v-cloak>系统当前版本号为 <span class="noticeWord">{{versionUpdateData.nowVersionNo}}</span></p>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button type="primary" @click="dialogAboutMe = false"><span v-cloak>我知道了</span></el-button>
+                    </div>
+                </el-dialog>
+                <el-dialog title="修改信息" :visible.sync="dialogFormVisible" top="6%" custom-class="changeMessage">
+                    <el-form :model="form" :rules="rule_data" ref="form" class="demo-ruleForm">
+                        <el-form-item prop="account" label="用户账号" :label-width="formLabelWidth">
+                            <el-input :disabled="true" v-model="form.account" auto-complete="off"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="name" required label="用户姓名" :label-width="formLabelWidth">
+                            <el-input v-model="form.name" auto-complete="off" placeholder="请输入用户姓名"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="defModel" label="系统模块" :label-width="formLabelWidth">
+                            <el-select style="width:100%;" v-model="form.defModel" placeholder="请选择">
+                                <el-option v-for="item in defModelSelect" :key="item.id" :label="item.title"
+                                    :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item prop="phone" label="移动电话" :label-width="formLabelWidth">
+                            <el-input v-model="form.phone" auto-complete="off" placeholder="请输入移动电话"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="email" label="电子邮件" :label-width="formLabelWidth">
+                            <el-input v-model="form.email" auto-complete="off" placeholder="请输入电子邮箱"></el-input>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="resetForm('form')"><span v-cloak>重置</span>
+                        </el-button>
+                        <el-button type="primary" @click="submitForm('form')"><span v-cloak>提交</span>
+                        </el-button>
+                    </div>
+                </el-dialog>
+
+                <el-dialog title="修改密码" :visible.sync="dialogPasswordFormVisible" top="6%" custom-class="changeMessage">
+                    <el-form :model="passwordForm" :rules="password_rule_data" ref="passwordForm" class="demo-ruleForm">
+                        <el-form-item prop="oldPassword" required label="旧密码" :label-width="formLabelWidth">
+                            <el-input v-model="passwordForm.oldPassword" type="password" auto-complete="off" placeholder="请输入旧密码"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="newPassword" required label="新的密码" :label-width="formLabelWidth">
+                            <el-input v-model="passwordForm.newPassword"  type="password" auto-complete="off" placeholder="请输入新密码"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="isPassword" required label="确认密码" :label-width="formLabelWidth">
+                            <el-input ref="isPasswordInput" v-model="passwordForm.isPassword"  type="password" auto-complete="off" placeholder="请确认密码"></el-input>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogPasswordFormVisible=false"><span v-cloak>取消</span>
+                        </el-button>
+                        <el-button type="primary" @click="submitPasswordForm('passwordForm')"><span v-cloak>提交</span>
+                        </el-button>
+                    </div>
+                </el-dialog>
+
+                <el-dialog title="默认模块" :visible.sync="dialogFormModel" custom-class="changeMessage">
+                    <el-form :model="form"  ref="form" class="demo-ruleForm">
+                        <el-form-item prop="defModel" label="系统模块" :label-width="formLabelWidth">
+                            <el-select style="width:100%;" v-model="form.defModel" placeholder="请选择">
+                                <el-option v-for="item in defModelSelect" :key="item.id" :label="item.title"
+                                    :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button type="primary" @click="updateForm('form')"><span v-cloak>设置默认模块</span>
+                        </el-button>
+                    </div>
+                </el-dialog>
+                <el-dialog title="版本更新" @close="goSystem" :visible.sync="dialogVersionUpdateVisible" size="tiny"
+                    top="5%" v-cloak>
+                    <div style="line-height:24px" v-cloak>
+                        <p v-cloak class="noticeWord" style="font-weight:bold;font-size:16px;margin-bottom:5px">
+                            <svg class="icon" aria-hidden="true">
+                                <use xlink:href="#dj-zhuyi"></use>
+                            </svg>
+                            {{versionUpdateData.companyName}}
+                        </p>
+                        <p v-cloak style="margin-bottom:5px">非常感谢您的使用，系统已顺利从
+                            <span class="noticeWord">{{versionUpdateData.preVersionNo}}</span>
+                            升级至
+                            <span class="noticeWord">{{versionUpdateData.nowVersionNo}}</span>
+                            版本。本次系统升级情况如下：
+                        </p>
+                        <p v-cloak v-for="item in versionUpdateDataInfo">
+                            <span class="noticeWord">{{item}}</span>
+                        </p>
+                    </div>
+                    <span slot="footer" class="dialog-footer">
+                        <el-button type="primary" @click="goSystem" v-cloak>火速前往</el-button>
+                        <el-checkbox v-model="checked" style="margin-left:10px" v-cloak>不再提示</el-checkbox>
+                    </span>
+                </el-dialog>
+                <el-dialog title="温馨提示" :visible.sync="dialogTipVisible" top="28%" size="tiny">
+                    <div style="width:30px">
+                        <svg class="icon" style='font-size:40px;color:#20A0FF;float:left' aria-hidden="true">
+                            <use xlink:href="#dj-jiaoshu"></use>
+                        </svg>
+                    </div>
+                    <div style="margin:10px 0 0 80px;text-indent:2em;line-height:24px"><span
+                            v-cloak>{{tipData.split('@')[0]}}</span>
+                        <span v-cloak style="color: #FF4949">{{tipData.split('@')[1]}}</span>
+                        <span v-cloak>{{tipData.split('@')[2]}}</span>
+
+                    </div>
+                    <span slot="footer" class="dialog-footer">
+                        <el-button type="primary" @click="dialogTipVisible = false" v-cloak>我知道了</el-button>
+                    </span>
+
+                </el-dialog>
+            </header>
+            <el-tabs class="headTab" ref="headTab" v-model="tabValue" type="card" @tab-remove="removeTab"
+                @tab-click="clickTab">
+                <el-tab-pane style="background: #fff" id="tabTab" v-for="(item, index) in tabs" :key="item.name"
+                    :label="item.title" :name="item.name" :class="item.parent" :closable="item.closable">
+                    <iframe :id="item.name" class="curved_box" frameborder="0" scrolling="yes" :src="item.url"
+                        width="100%" :height="win_size.contentHeight" v-cloak :name="item.name"></iframe>
+                </el-tab-pane>
+            </el-tabs>
+            <!-- 点击右键出现的菜单 -->
+            <div id="rightMenu">
+                <ul>
+                    <li @click="closeMethod('this')">
+                        <svg class="icon" style="width: 1em;height: 1em" aria-hidden="true">
+                            <use xlink:href="#dj-guanbi"></use>
+                        </svg>
+                        关闭
+                    </li>
+                    <li @click="closeMethod('others')">关闭其他页面</li>
+                    <li @click="closeMethod('all')">关闭所有页面</li>
+                    <li @click="closeMethod('right')">关闭右边的所有页面</li>
+                </ul>
+            </div>
+        </section>
+        <div id="layerNew" class="layerNew">
+            <div class="layerNewInner">
+                <span style="margin-bottom:20px;font-size:16px">
+                    <svg class="icon" style="color:#324157" aria-hidden="true">
+                        <use xlink:href="#dj-jilu"></use>
+                    </svg>
+                    <span v-cloak style="font-weight:bold">
+                        温馨提示
+                    </span>
+                    <p v-cloak>{{introductionContent}}</p>
+                </span>
+                <img src="static/assets/arrow.png" width="50" height="145" alt="arrow" style="margin-bottom:55px">
+                <el-button @click="closeLayer" style="width:100px;color:#f1f2f3;background:none;text-align:center;">我知道了
+                </el-button>
+            </div>
+        </div>
+    </div>
+</body>
+<!-- 引入vue -->
+<!-- 注:这里重复引用是由于火狐和谷歌渲染机制不同-->
+<script type="text/javascript" src="static/vue/dist/vue.min.js?_t=1600063638030"></script>
+<!-- 设置Vue.devtools浏览器工具 -->
+<script>
+    Vue.config.devtools = true;
+</script>
+<!-- 引入组件库 -->
+<script type="text/javascript" src="static/element-ui/lib/index.js?_t=1600063638030"></script>
+<!--引入jQuery-->
+<script type="text/javascript" src="resources/plugins/bootstrap/dist/js/jquery-1.10.2.min.js?_t=1600063638030"></script>
+<!-- 引入axios -->
+<script type="text/javascript" src="static/axios/dist/axios.min.js?_t=1600063638030"></script>
+<!-- 引入icon-font图标 -->
+<!--<script type="text/javascript" src="http://at.alicdn.com/t/font_385957_1v8bngcpbbo3whfr.js?_t=1600063638030"></script>-->
+<script type="text/javascript" src="static/icon-font/iconfont.js?_t=1600063638030"></script>
+<!--引入弹窗-->
+<script type="text/javascript" src="resources/plugins/bootstrap/layer/layer.js?_t=1600063638030"></script>
+<!--引入顶部加载条-->
+<script type="text/javascript" src="static/nprogress/nprogress.js?_t=1600063638030"></script>
+<!--引入推送消息的功能-->
+<script src="resources/plugins/socket/sockjs.min.js?_t=1600063638030"></script>
+<script src="resources/plugins/socket/stomp.min.js?_t=1600063638030"></script>
+<script type="text/javascript" src="static/toast/js/iziToast.js?_t=1600063638030"></script>
+<script type="text/javascript" src="static/message/global.js?_t=1600063638030"></script>
+<script type="text/javascript" src="static/message/takemessage.js?_t=1600063638030"></script>
+<!-- <script type="text/javascript" src="static/message/messageShow.js?_t=1600063638030"></script> -->
+<script type="text/javascript" src="static/message/toastMessage.js?_t=1600063638030"></script>
+<!--引入本地js文件-->
+<script src="resources/plugins/crypto-js/src/core.js?_t=1600063638030"></script>
+<script src="resources/plugins/crypto-js/src/cipher-core.js?_t=1600063638030"></script>
+<script src="resources/plugins/crypto-js/src/tripledes.js?_t=1600063638030"></script>
+<script src="resources/plugins/crypto-js/src/mode-ecb.js?_t=1600063638030"></script>
+<script src="resources/framework/js/framework-encrypt.js?_t=1600063638030"></script>
+<script type="text/javascript" src="static/js/home.js?_t=1600063638030"></script>
+<script type="text/javascript" src="resources/pageJs/organization/user/updatePass.js?_t=1600063638030"></script>
+
+
+</html>
