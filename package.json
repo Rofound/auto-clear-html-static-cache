@@ -8,9 +8,13 @@
     "start:version": "node clear-cache-service.js home.html",
     "test": "node clear-cache-service.js test.html",
     "test:error": "node clear-cache-service.js",
-    "test:error1": "node clear-cache-service.js notFound.html"
+    "test:error1": "node clear-cache-service.js notFound.html",
+    "build:exe": "nexe clear-cache-service.js -o clear-cache-service_x86.exe"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "nexe": "^3.3.7"
+  }
 }
